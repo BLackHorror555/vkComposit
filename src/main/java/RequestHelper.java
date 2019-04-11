@@ -2,42 +2,40 @@ import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.UserActor;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
-import com.vk.api.sdk.objects.UserAuthResponse;
-import com.vk.api.sdk.objects.friends.FriendsList;
 import com.vk.api.sdk.objects.friends.responses.GetResponse;
-import com.vk.api.sdk.queries.friends.FriendsGetQuery;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class RequestHelper {
 
     private VkApiClient vkApiClient;
-    private String host;
     private UserActor userActor;
 
-    public RequestHelper(VkApiClient vkApiClient, String host) {
+    public RequestHelper(VkApiClient vkApiClient) {
         this.vkApiClient = vkApiClient;
-        this.host = host;
     }
 
-    public void authenticate() throws ClientException, ApiException {
-        UserAuthResponse authResponse = vkApiClient.oauth()
-                .userAuthorizationCodeFlow(VkUtils.APP_ID, VkUtils.CLIENT_SECRET, getRedirectUri(), "code")
-                .execute();
-
-        userActor = new UserActor(authResponse.getUserId(), authResponse.getAccessToken());
+    public void authenticate(int userId) throws Exception {
+        userActor = new UserActor(userId, askEnterToken(getOAuthUrl()));
     }
 
     public void getFriends() throws ClientException, ApiException {
         GetResponse getResponse = vkApiClient.friends().get(userActor).execute();
-        FriendsList
-
+        System.out.println(getResponse);
     }
 
     private String getOAuthUrl() {
-        return "https://oauth.vk.com/authorize?client_id=" + VkUtils.APP_ID + "&display=page&redirect_uri="
-                + getRedirectUri() + "&scope=friends&response_type=code";
+        return "https://oauth.vk.com/authorize?client_id=" + VkUtils.APP_ID
+                + "&display=page&redirect_uri=" + VkUtils.REDIRECT_URI
+                + "&scope=friends&response_type=token&v=5.95";
     }
 
-    private String getRedirectUri() {
-        return host + "/callback";
+    private String askEnterToken(String link) throws IOException, URISyntaxException {
+        Desktop.getDesktop().browse(new URI(link));
+        return JOptionPane.showInputDialog("Please input access_token param from browser: ");
     }
 }
