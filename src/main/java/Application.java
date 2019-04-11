@@ -14,8 +14,10 @@ public class Application {
         try {
             requestHelper.authenticate(183184707);
             ArrayList<Friend> friends = requestHelper.getUserFriendsTwoLevelDepth();
-            friends.get(0).draw(0);
-            
+
+            for (Friend friend : friends) {
+                friend.draw(3);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
