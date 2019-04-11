@@ -1,7 +1,6 @@
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.UserActor;
-import com.vk.api.sdk.exceptions.ApiException;
-import com.vk.api.sdk.exceptions.ClientException;
+import com.vk.api.sdk.exceptions.ApiAccessException;
 import com.vk.api.sdk.objects.friends.responses.GetResponse;
 
 import javax.swing.*;
@@ -9,6 +8,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 public class RequestHelper {
 
@@ -23,9 +23,56 @@ public class RequestHelper {
         userActor = new UserActor(userId, askEnterToken(getOAuthUrl()));
     }
 
-    public void getFriends() throws ClientException, ApiException {
-        GetResponse getResponse = vkApiClient.friends().get(userActor).execute();
-        System.out.println(getResponse);
+    public ArrayList<Friend> getUserFriendsTwoLevelDepth() throws Exception {
+        GetResponse getResponse = getFriendsResponse(userActor.getId());
+        ArrayList<Friend> friendsOne = new ArrayList<>();
+        Friend friendOneToAdd = new Friend();
+
+        for (int i = 0; i < getResponse.getItems().size(); i++) {
+            ArrayList<Friend> friendsTwo = new ArrayList<>();
+            Friend friendTwoToAdd = new Friend();
+            GetResponse friendsTwoResponse;
+            try {
+                friendsTwoResponse = getFriendsResponse(getResponse.getItems().get(i));
+            } catch (Exception ex) {
+                continue;
+            }
+
+            for (int j = 0; j < friendsTwoResponse.getItems().size(); j++) {
+                Friend lastFriend = new Friend();
+                lastFriend.setNeedToVisualizeFriends(false);
+                GetResponse anotherFriends;
+                try {
+                    anotherFriends = getFriendsResponse(friendsTwoResponse.getItems().get(j));
+                } catch (Exception ex) {
+                    continue;
+                }
+                boolean isFriends;
+                try {
+                    isFriends = getFriendsResponse(anotherFriends.getItems().get(j)).getCount() != 0;
+                } catch (Exception ex) {
+                    isFriends = false;
+                }
+                if (isFriends) {
+                    lastFriend.setFriends(new ArrayList<>());
+                }
+
+                friendsTwo.add(lastFriend);
+            }
+            friendTwoToAdd.setFriends(friendsTwo);
+        }
+        friendOneToAdd.setFriends(friendsOne);
+        friendsOne.add(friendOneToAdd);
+
+        return friendsOne;
+    }
+
+    private GetResponse getFriendsResponse(int userId) throws Exception {
+        Thread.sleep(400);
+        return vkApiClient.friends().get(userActor)
+                .userId(userId)
+                .count(2)
+                .execute();
     }
 
     private String getOAuthUrl() {
