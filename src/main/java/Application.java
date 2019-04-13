@@ -1,26 +1,49 @@
-import com.vk.api.sdk.client.TransportClient;
-import com.vk.api.sdk.client.VkApiClient;
-import com.vk.api.sdk.httpclient.HttpTransportClient;
+import friends.Friend;
 
-import java.util.ArrayList;
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
 
-public class Application {
+public class Application extends JPanel {
 
-    public static void main(String[] args) {
-        TransportClient transportClient = HttpTransportClient.getInstance();
-        VkApiClient vk = new VkApiClient(transportClient);
-        RequestHelper requestHelper = new RequestHelper(vk);
+    private List<Friend> friendsToDraw;
 
+    private Application() {
+        VkApiHelper vkApiHelper = new VkApiHelper();
+        vkApiHelper.initClient();
         try {
-            requestHelper.authenticate(183184707);
-            ArrayList<Friend> friends = requestHelper.getUserFriendsTwoLevelDepth();
-
-            for (Friend friend : friends) {
-                friend.draw(3);
-            }
-
+            vkApiHelper.authenticate(183184707);
+            friendsToDraw = vkApiHelper.getFriends();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        Application application = new Application();
+        SwingUtilities.invokeLater(() -> createAndShowGUI(application));
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(1500, 1500);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (friendsToDraw != null) {
+            for (Friend friend : friendsToDraw) {
+                friend.draw(g, new Point(500, 250));
+            }
+        }
+    }
+
+    private static void createAndShowGUI(Application application) {
+        JFrame f = new JFrame("Graph friend");
+        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        f.add(application);
+        f.pack();
+        f.setVisible(true);
     }
 }
